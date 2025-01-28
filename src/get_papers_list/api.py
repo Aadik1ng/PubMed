@@ -1,51 +1,53 @@
 import requests
-from typing import List
-import os
-from dotenv import load_dotenv
+from typing import List, Dict, Any
+
 
 class PubMedAPI:
-    BASE_URL = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils"
+    BASE_URL_SEARCH = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi"
+    BASE_URL_FETCH = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi"
 
-    def __init__(self, api_key: str = None):
-        load_dotenv()
-        self.api_key = api_key or os.getenv("PUBMED_API_KEY")
+    def __init__(self, api_key: str):
+        self.api_key = api_key
 
     def fetch_papers(self, query: str) -> List[str]:
+        """Fetch paper IDs using the provided query."""
         params = {
             "db": "pubmed",
             "term": query,
             "retmode": "json",
-            "retmax": 100,
+            "retmax": 100,  # Adjust as needed
             "api_key": self.api_key,
         }
-        response = requests.get(f"{self.BASE_URL}/esearch.fcgi", params=params)
+        response = requests.get(self.BASE_URL_SEARCH, params=params)
         response.raise_for_status()
-        return response.json().get("esearchresult", {}).get("idlist", [])
+        result = response.json()
+        paper_ids = result.get("esearchresult", {}).get("idlist", [])
+        return paper_ids
 
-    def fetch_paper_details(self, pmids: List[str]) -> str:
-        if not pmids:
-            raise ValueError("PMID list is empty. Cannot fetch details.")
-        
+    def fetch_paper_details(self, paper_ids: List[str]) -> List[Dict[str, Any]]:
+        """Fetch detailed paper information by ID."""
+        if not paper_ids:
+            return []
+            
         params = {
             "db": "pubmed",
-            "id": ",".join(pmids),
-            "retmode": "xml",
+            "id": ",".join(paper_ids),
+            "retmode": "json",
             "api_key": self.api_key,
         }
-        response = requests.get(f"{self.BASE_URL}/efetch.fcgi", params=params)
+        response = requests.get(self.BASE_URL_FETCH, params=params)
         response.raise_for_status()
-        return response.text
+        result = response.json()
 
-if __name__ == "__main__":
-    api = PubMedAPI()
-    query = "cancer research"
-    papers = api.fetch_papers(query)
-    print(f"Fetched papers: {papers}")
+        # Debug: Print the full response structure
+        print("Full response:", result)
 
-    if papers:
-        try:
-            details = api.fetch_paper_details(papers[:10])
-            print("Paper Details (XML):")
-            print(details)
-        except ValueError as e:
-            print(f"Error: {e}")
+        # Check if 'result' contains the expected structure (a dictionary of papers)
+        if 'result' in result:
+            papers = result['result']
+            # We need to ensure it's not a list but a dictionary of papers
+            if isinstance(papers, dict):
+                return list(papers.values())
+            else:
+                print("Unexpected structure for papers:", papers)
+        return []
