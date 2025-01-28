@@ -1,0 +1,13 @@
+[tool.poetry]
+name = "get-papers-list"
+version = "0.1.0"
+description = "Fetch research papers with specific author affiliations from PubMed."
+authors = ["Aaditya"]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+requests = "^2.31.0"
+python-dotenv = "^1.0.1"
+
+[tool.poetry.scripts]
+get-papers-list = "get_papers_list.cli:main"
