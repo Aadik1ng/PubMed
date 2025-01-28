@@ -47,7 +47,7 @@ git clone https://github.com/Aadik1ng/PubMed.git
 
 **ii. Navigate into the project directory**:
 
-cd your-repository-folder
+cd src\get_papers_list
 
 
 
